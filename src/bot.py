@@ -1,14 +1,22 @@
 import asyncio
+from sqlite3 import Connection
 
 import discord
+from discord import Reaction, User
 from discord.ext import commands
 import sqlite3 as sql
-from src.db import db as db
+
+from GUI.screens.Emojicatron import Emojicatron
+from GUI.screens.PlanningList import PlanningList
+from pipeline.EventType import EventType, getEmojiEvent
+from src.db import db
 import src.GUI.dialogs as GUI
 from GUI.Emojis import Emojis as emo
 
-PREFIX = '?'
+import pipeline.Processing as Pr
+from config import *
 
+db:Connection
 db = sql.connect('schedule.db')
 
 db.execute("CREATE TABLE IF NOT EXISTS event ("
@@ -31,8 +39,38 @@ db.execute("CREATE TABLE IF NOT EXISTS schedule ("
 
 bot = commands.Bot(command_prefix=PREFIX, description='Un bot alien qui fait '
                                                       'le '
-                                                   'café.')
+                                                      'café.')
 ### TODO: add prediction de commande sur commandes inconnues
+
+
+@bot.command()
+async def emojicatron(ctx):
+    screen = Emojicatron()
+    await screen.send(ctx)
+
+@bot.event
+async def on_reaction_remove(reac:Reaction, user:User):
+    if user.id == bot.user.id:
+        return
+    await Pr.fireMessageEvent(EventType.REMOVE_REACTION,
+                        reac.message.id,
+                        (reac, user))
+    await Pr.fireMessageEvent(getEmojiEvent(reac.emoji),
+                        reac.message.id,
+                        (reac, user))
+
+
+@bot.event
+async def on_reaction_add(reac:Reaction, user:User):
+    if user.id == bot.user.id:
+        return
+    await Pr.fireMessageEvent(EventType.ADD_REACTION,
+                        reac.message.id,
+                        (reac, user))
+    await Pr.fireMessageEvent(getEmojiEvent(reac.emoji),
+                        reac.message.id,
+                        (reac, user))
+
 
 def is_closed(*_):
     db.commit()
@@ -45,14 +83,73 @@ async def on_ready():
     print(bot.user.name)
     print(bot.user.id)
     print('------')
-    print(db.execute('SELECT * FROM schedule'))
+    #print(db.execute('SELECT * FROM event').fetchall())
+    #print(db.execute('SELECT * FROM schedule').fetchall())
 
 
 @bot.command()
+async def test(ctx):
+    name = "Ouroboros"
+    short_desc = "Lancer une fusée par minute, a partir d un bus mixte " \
+                 "circulaire bordélique à souhait! Venez c'est rigolo :D"
+    long_desc = \
+    """# OBJECTIF
+
+Envoyer une fusée toutes les 10 minutes afin de produire un total de 100 potions par minute à partir d’une mégabase à bus mixte en circuit fermé !
+
+# JE PEUX VENIR?
+
+Oui, tous les curieux et volontaires sont bienvenus ! Il y a du boulot et du fun pour tout le monde !
+
+# QU’Y A-T-IL DE PRÉVU ?
+
+Des routes, des courses de voitures, de la décoration, du cassage d’autochtones, de la déforestation, du challenge et du partage d’expérience !
+Que vous soyez débutant, intermédiaire ou expert, il y a de quoi s’amuser pour vous ! 
+
+– Les moins avancés vont pouvoir désigner les premières usines qui leur seront dédiées, poser leurs questions et évoluer ! Vous pourrez aussi décorer la base et vous amuser sur les terrains de courses !
+– Les intermédiaires se chargeront de mener à bien la réalisation et évolution de la base de départ et de préparer les zones de champ libre et de transports !
+– Les plus avancés pourront se concentrer sur la logique et le challenge du bus mixte en circuit fermé ainsi que préparer les systèmes de production à grande échelle !
+
+# JE NE PEUX PAS JUSTE REGARDER ?
+
+Et bien si ! Chaque session sera diffusée par un streamer annoncé en avance sur le channel général ! Restez à l’écoute !
+
+# J’AI UNE QUESTION
+
+Et bien, n’aie pas peur de la poser sur le channel #général du projet ! Nous y répondrons avec plaisir !
+
+# COMMENT DÉTERMINE-T-ON QUI FAIT QUOI ?
+
+Afin de pouvoir avoir les permissions d’accéder au projet, vous devez juste nous soumettre votre niveau dans Factorio pour que l’on puisse vous assigner aux tâches les plus adaptées, afin que l’on puisse s’organiser tous ensemble au mieux !
+
+# Y AURA DES MODS ?
+
+Oui ! Ce projet est moddé pour rendre l’objectif final plus faisable et plus fun ! 
+La version de Factorio utilisée est la version 16.51 stable et voici la liste des mods du projet :
+
+1. Asphalt roads
+2. Color Coding
+3. Dectorio
+4. FARL
+5. Helmod
+6. Ore compress
+7. Pavement Drive Assist
+8. Plate compress
+9. Text Plates
+10. Upgrade builder and planner"""
+    version = "0.16"
+    modpack = "https://mega.nz/#F!MfgDXYzb!EaE0RkwIIdmsSgcDLuhTJw"
+    organizer = "Helldragger#7021"
+    #TODO
+    db.execute("INSERT INTO event() VALUES(?,?,?,?,?,?);",
+               (name, short_desc, long_desc, version, modpack, organizer))
+
+@bot.command()
 async def info(ctx):
-    embed = discord.Embed(title="nice bot",
-                          description="Nicest bot there is ever.",
-                          color=0xeee657)
+    embed = discord.Embed(title="Nauvibot",
+                          description="The best bot ever created on Nauvis! "
+                                      ":D WIP",
+                          color=EMBEDCOLOR)
 
     # give info about you here
     embed.add_field(name="Author", value="Helldragger#7021")
@@ -101,13 +198,17 @@ async def message_emojificator(msg, emojis):
 
 async def message_respondificator(msg, e_list, author):
     def c(r, u):
+        print(r.emoji,str([ e[0] for e in e_list]),author,u,r.message.id,msg.id)
         return u == author and str(r.emoji) in [ e[0] for e in e_list] and \
                r.message.id == msg.id
     try:
+        print("waiting reaction")
         r, u = await bot.wait_for('reaction_add', timeout=120.0, check=c)
     except asyncio.TimeoutError:
-        pass
+        print("No reaction")
+        return ""
     else:
+        print("Reaction got")
         return str(r.emoji)
     finally:
         await msg.delete()
@@ -123,7 +224,7 @@ async def menu_chooser(ctx, message, emoji_list):
 
 
 @bot.command()
-async def nauvis(ctx, type=None, act=None, id=None, *options):
+async def nauvis(ctx, type=None, act=None, *options):
 
     if type!=None:
         main_r = emo.INFO.get_emoji()
@@ -131,6 +232,7 @@ async def nauvis(ctx, type=None, act=None, id=None, *options):
         main_r = await menu_chooser(ctx,
                                     GUI.mainmenu_m,
                                     GUI.mainmenu_e)
+    print(main_r,type)
     # EVENTS
     if main_r == emo.EVENTS.get_emoji() or type=="events":
         if act != None:
@@ -139,6 +241,7 @@ async def nauvis(ctx, type=None, act=None, id=None, *options):
             event_r = await menu_chooser(ctx,
                                          GUI.event_m,
                                          GUI.event_e)
+        print(event_r, act)
         #LIST📇
         if event_r == emo.LISTING.get_emoji() or act=="list":
             pass
@@ -161,6 +264,8 @@ async def nauvis(ctx, type=None, act=None, id=None, *options):
                                      GUI.planning_e)
         #LIST📇
         if event_r == emo.LISTING.get_emoji() or act=="list":
+            screen = PlanningList(db)
+            await screen.send(ctx)
             pass
         #ADD
         elif event_r == emo.SCHEDULE.get_emoji() or act=="new":

@@ -15,12 +15,12 @@ def read_month(db):
                       "AND date <= Datetime('now', 'start of day', '+1 month')"
                       "ORDER BY Datetime(date) asc")
 
-def read_week():
+def read_week(db):
     return db.execute('SELECT * FROM schedule '
                       'WHERE date > Datetime(?) '
                       'ORDER BY Datetime(date) asc')
 
-def read_day():
+def read_day(db):
     return db.execute('SELECT * FROM schedule '
                       'WHERE date > Datetime(?) '
                       'ORDER BY Datetime(date) asc', )

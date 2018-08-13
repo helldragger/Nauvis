@@ -11,7 +11,7 @@ def gen_dialog(title:str, options:[e],
                            description=description,
                            color=dialog_color)
     for option in options:
-        dialog.add_field(name=option[0], value=option[1], inline=True)
+        dialog.add_field(name=option[0], value=option[1], inline=False)
 
     return dialog
 
