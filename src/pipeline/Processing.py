@@ -56,11 +56,42 @@ def registerScreen(ref, *types:EventType) :
     print("INFO>" + str(ref.msg_ref.id) + " screen has been registered")
 
 
+def registerScreenButton(ref, T:EventType):
+    if not ref.sent or ref.deleted:
+        raise RuntimeError("Cannot register this Screen, either not sent or "
+                           "already deleted.")
+    if ref.msg_ref is None:
+        raise RuntimeError("There is no message ref to register.")
+
+    id = ref.msg_ref.id
+    if T not in msgWatcherRegistry.keys():
+        msgWatcherRegistry.setdefault(T, {
+            id: {ref}
+        })
+    elif id not in msgWatcherRegistry.get(T):
+        msgWatcherRegistry.get(T)[id] = {ref}
+    else:
+        msgWatcherRegistry.get(T).get(id).add(ref)
+
+    if ref not in msgListenerRegistry.keys():
+        msgListenerRegistry.setdefault(ref, {T})
+    else:
+        msgListenerRegistry.get(ref).add(T)
+
 def unregisterScreen(ref):
     for type in msgListenerRegistry.get(ref):
         del msgWatcherRegistry[type][ref.msg_ref.id]
     del msgListenerRegistry[ref]
     print("INFO>"+str(ref.msg_ref.id)+" screen has been unregistered")
+
+def unregisterScreenButton(ref, T:EventType):
+    if msgWatcherRegistry[T][ref.msg_ref.id] is None:
+        raise RuntimeError("Event not registered.")
+    del msgWatcherRegistry[T][ref.msg_ref.id]
+    del msgListenerRegistry[ref][T]
+    print("INFO>"+str(ref.msg_ref.id)+" screen button ",T,"has been " \
+                                                         "unregistered")
+
 
 
 def registerGlobalListener(ref:Listener, *types:EventType) :

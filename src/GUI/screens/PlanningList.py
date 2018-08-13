@@ -28,12 +28,12 @@ class PlanningList(Screen):
             ET.CANCEL
         ]
         emoji_button = [
-            (ET.SCROLL_UP, ""),
-            (ET.SCROLL_DOWN, ""),
-            (ET.SWITCH_MODE, ""),
-            (ET.BACKWARD, ""),
-            (ET.FORWARD, ""),
-            (ET.CANCEL, "")
+            ET.SCROLL_UP,
+            ET.SCROLL_DOWN,
+            ET.SWITCH_MODE,
+            ET.BACKWARD,
+            ET.FORWARD,
+            ET.CANCEL
         ]
         super().__init__(emoji_button, watched_events)
 
@@ -69,6 +69,7 @@ class PlanningList(Screen):
     def build(self):
         self.content = []
         #self.planning = yada yada
+        #TODO update with real data
         self.planning = [
             PlannedEvent("20:30 11/08",
                          "Projet Ouroboros",

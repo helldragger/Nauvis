@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 from discord import Embed, File, Message
 
-from pipeline.EventType import EventType
+from pipeline.EventType import EventType, getEmojiEvent
 from pipeline.Listener import Listener
 import pipeline.Processing as Pr
 
@@ -20,7 +20,7 @@ class Screen(Listener):
     msg_ref: Message
 
     @abstractmethod
-    def __init__(self,emoji_buttons:[(str, str)], watched_events: [
+    def __init__(self,emoji_buttons:[EventType], watched_events: [
         EventType]):
         super().__init__(watched_events)
         self.sent = False
@@ -36,7 +36,6 @@ class Screen(Listener):
 
 
 
-
     async def send(self, context):
         if not self.sent:
             # builds and send the message
@@ -47,11 +46,22 @@ class Screen(Listener):
                                               delete_after=self.delete_after)
             self.sent = True
             # register the listener
-            Pr.registerScreen(self, self.watchedEvents)
-            for emoji in self.emoji_buttons:
-                e = emoji[0]
-                print("adding reaction "+ e.name + " as "+ e.value)
-                await self.msg_ref.add_reaction(emoji[0].value)
+            for ev in self.emoji_buttons:
+                if getEmojiEvent(ev.value) != EventType.UNKNOWN_EMOJI:
+                    self.registerButton(ev)
+                else:
+                    Pr.registerScreen(self, ev)
+
+
+
+    async def registerButton(self, emojiButton):
+        Pr.registerScreenButton(self, emojiButton)
+        await self.msg_ref.add_reaction(emojiButton.value)
+
+    async def unregisterButton(self, emojiButton):
+        Pr.unregisterScreenButton(self, emojiButton)
+        await self.msg_ref.remove_reaction(emojiButton.value, self.msg_ref.author)
+
 
     async def updateScreen(self):
         if self.sent and not self.deleted:
