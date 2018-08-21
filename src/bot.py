@@ -1,29 +1,20 @@
-import asyncio
-from sqlite3 import Connection
-
-import discord
-from discord import Reaction, User, Message
-from discord.ext import commands
 import sqlite3 as sql
 
-from discord.ext.commands import Bot
+import discord
+from discord import Message, Reaction, User
+from discord.ext import commands
 
+import pipeline.Processing as Pr
 from GUI.screens.Emojicatron import Emojicatron
 from GUI.screens.EventList import EventList
 from GUI.screens.MainMenu import MainMenu
 from GUI.screens.PlanningEdit import PlanningEdit
 from GUI.screens.PlanningList import PlanningList
+from config import *
 from pipeline.EventType import EventType, getEmojiEvent
 from src.db import db
 
-import pipeline.Processing as Pr
-from config import *
 
-
-
-
-db:Connection
-bot:Bot
 db = sql.connect('schedule.db')
 
 db.execute("CREATE TABLE IF NOT EXISTS event ("
@@ -88,6 +79,7 @@ async def on_message(mess:Message):
     await Pr.fireMessageEvent(EventType.ON_MESSAGE,
                         mess.id,
                         (mess))
+    await bot.process_commands(mess)
 
 
 def is_closed(*_):
@@ -111,6 +103,7 @@ bot.remove_command('help')
 
 @bot.command()
 async def help(ctx):
+    print("Help command detected")
     embed = discord.Embed(title="NauviBot help panel",
                           description="A Very Nice bot. List of commands are:",
                           color=0xeee657)
