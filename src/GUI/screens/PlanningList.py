@@ -1,8 +1,11 @@
+import sqlite3 as sql
+
 import discord
 
 from GUI.screens.Screen import Screen
-from pipeline.EventType import EventType as ET
 from db.PlannedEvent import PlannedEvent
+from pipeline.EventType import EventType as ET
+
 
 class PlanningList(Screen):
     dateOffset:int
@@ -11,11 +14,11 @@ class PlanningList(Screen):
     weekMode:bool
     planning:[PlannedEvent]
 
-    def __init__(self, database):
+    def __init__(self):
         self.viewOffset = 0
         self.maxViewOffset = 1
         self.dateOffset = 0
-        self.db = database
+        self.db = sql.connect('schedule.db')
         self.weekMode = True
 
 
