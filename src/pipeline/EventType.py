@@ -10,16 +10,18 @@ class EventType(Enum):
     UNKNOWN_EMOJI = "Unknown emoji"
 
     #events
-    ADD_REACTION = "reaction_add"
-    REMOVE_REACTION = "reaction_remove"
-    EDIT = "message_edit"
-    DELETE = "message_delete"
+    ON_REACTION_ADD = "on_reaction_add"
+    ON_REACTION_REMOVE = "on_reaction_remove"
+    ON_MESSAGE = "on_message"
+    ON_MESSAGE_EDIT = "on_message_edit"
+    ON_MESSAGE_DELETE = "on_message_delete"
 
     # navigation
     SCROLL_UP = "🔼"
     SCROLL_DOWN = "🔽"
     TOP = "⤴"
     BOTTOM = "⤵"
+
 
     CONFIRM = "✔"
     MODIFY = "📝"
@@ -31,10 +33,14 @@ class EventType(Enum):
     FBACKWARD = "⏮"
 
     CALENDAR = "🗓"
+    LIST = "📜"
 
     SWITCH_MODE = "🔘"
 
-    INFO = "❔"
+    CHECKBOX_TICKED = "☑"
+
+    INFO = "ℹ"
+    NEW = "🆕"
 
     # Anchors
     ZERO = "0⃣"
@@ -80,8 +86,8 @@ emojiEq = {}
 
 for symbol in EventType:
     special_events = {
-        EventType.ADD_REACTION,
-        EventType.REMOVE_REACTION,
+        EventType.ON_REACTION_ADD,
+        EventType.ON_REACTION_REMOVE,
         EventType.EDIT,
         EventType.DELETE,
         EventType.UNIMPLEMENTED,
